@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>Neo · TikTok → SQL</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="tiktok.css">
+<style>
+.tab-bar{
+border-bottom: 1px solid rgb(186,190,204);
+padding-bottom: 8px;
+margin-top:8px;
+}
+.progress-bar{
+height:1px;
+margin:0px 0px 0px 0px;
+width:100%;
+}
+.header{
+padding: 5px 16px;
+border-bottom-left-radius: 0px;
+border-bottom-right-radius: 0px;
+}
+.hidden{
+display:none!important;
+}
+.header-buttons button{
+border-radius: 9999px;
+height: 30px;
+width: 30px;
+}
+tbody tr td:last-child div{
+width:100%;
+height:100%;
+padding: 0px;
+margin:0px;
+display: flex;
+flex-wrap: nowrap;
+align-items: center;
+justify-content: space-around;
+}
+span.found {
+color: #2e7d32;
+font-weight: 600;
+}
+span.missing {
+color: #9e9e9e;
+font-weight: 400;
+opacity:0.5;
+}
+</style>
+<style>
+/* From Uiverse.io by dylanharriscameron */ 
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  z-index: 1111;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 20px 20px 60px #bebebe, -20px -20px 60px #ffffff;
+  ;
+}
+.bg {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  z-index: 2;
+  background: rgba(255, 255, 255, .95);
+  backdrop-filter: blur(24px);
+  border-radius: 10px;
+  overflow: hidden;
+  outline: 2px solid white;
+}
+.blob {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: calc(100% - 50px);
+  height: calc(100% - 100px);
+  border-radius: 50%;
+  background-color: #ff0000;
+  opacity: 1;
+  filter: blur(12px);
+  animation: blob-bounce 5s infinite ease;
+}
+
+@keyframes blob-bounce {
+  0% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
+
+  25% {
+    transform: translate(-100%, -100%) translate3d(100%, 0, 0);
+  }
+
+  50% {
+    transform: translate(-100%, -100%) translate3d(100%, 100%, 0);
+  }
+
+  75% {
+    transform: translate(-100%, -100%) translate3d(0, 100%, 0);
+  }
+  100% {
+    transform: translate(-100%, -100%) translate3d(0, 0, 0);
+  }
+}
+#tiktok-tab{
+padding: 0px;
+}
+/* From Uiverse.io by mobinkakei */
+.label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  color: #394a56;
+}
+
+.label-text {
+  margin-left: 16px;
+}
+
+.toggle {
+  isolation: isolate;
+  position: relative;
+  height: 30px;
+  width: 60px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: -8px -4px 8px 0px #ffffff,
+    8px 4px 12px 0px #d1d9e6,
+    4px 4px 4px 0px #d1d9e6 inset,
+    -4px -4px 4px 0px #ffffff inset;
+}
+
+.toggle-state {
+  display: none;
+}
+
+.indicator {
+  height: 100%;
+  width: 200%;
+  background: #ecf0f3;
+  border-radius: 15px;
+  transform: translate3d(-75%, 0, 0);
+  transition: transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35);
+  box-shadow: -8px -4px 8px 0px #ffffff,
+    8px 4px 12px 0px #d1d9e6;
+}
+
+.toggle-state:checked~.indicator {
+  transform: translate3d(25%, 0, 0);
+}
+#summary-tab{
+border-radius: 30px;
+}
+.summary {
+ width: 100%;
+ height: 100%;
+ border-radius: 30px;
+ background: #212121;
+ box-shadow: 15px 15px 30px rgb(25, 25, 25), -15px -15px 30px rgb(60, 60, 60);
+}
+/* From Uiverse.io by adamgiebl */
+.summary {
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  background: #e0e0e0;
+  box-shadow: 15px 15px 30px #bebebe,
+    -15px -15px 30px #ffffff;
+}
+
+</style>
+<style>
+/* From Uiverse.io by Yaya12085 */
+.upload {
+  height: 300px;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 4px 4px 30px rgba(0, 0, 0, .2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 5px;
+  background-color: rgba(0, 110, 255, 0.041);
+  position: absolute;
+  top:50%;
+  left:50%;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+}
+
+.upload .head {
+  flex: 1;
+  width: 100%;
+  border: 2px dashed royalblue;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.upload .head svg {
+  height: 100px;
+}
+
+.upload .head p {
+  text-align: center;
+  color: black;
+}
+
+.upload .foot {
+  background-color: rgba(0, 110, 255, 0.075);
+  width: 100%;
+  height: 40px;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: black;
+  border: none;
+}
+
+.upload .foot svg {
+  height: 130%;
+  fill: royalblue;
+  background-color: rgba(70, 66, 66, 0.103);
+  border-radius: 50%;
+  padding: 2px;
+  cursor: pointer;
+  box-shadow: 0 2px 30px rgba(0, 0, 0, 0.205);
+}
+
+.upload .foot p {
+  flex: 1;
+  text-align: center;
+}
+
+#file {
+  display: none;
+}
+</style>
+</head>
+<body>
+<div id="app" class="app">
+
+<div class="header">
+<h1><i class="fas fa-database"></i> TikTok · SQL <span class="header-spinner" id="headerSpinner"></span></h1>
+<div class="header-buttons">
+<button class="icon-btn hidden" onclick="tiktokEngine.loadSample()" id="sampleBtn">
+<span class="btn-spinner"></span><span class="btn-text"><i class="fas fa-file-code"></i></span>
+</button>
+<button class="icon-btn" onclick="document.getElementById('tiktokFileInput').click()" id="uploadBtn">
+<span class="btn-spinner"></span><span class="btn-text"><i class="fas fa-upload"></i></span>
+</button>
+<input type="file" id="tiktokFileInput" accept=".json,application/json" style="display:none;" onchange="tiktokEngine.loadFile(this.files[0])">
+</div>
+
+<!-- From Uiverse.io by mobinkakei -->
+<label class="label">
+  <div class="toggle">
+    <input class="toggle-state" type="checkbox" name="check" value="check">
+    <div class="indicator"></div>
+  </div>
+</label>
+</div>
+<div class="progress-bar">
+<div class="progress-fill" id="progressBar" style="width: 25%;"></div>
+</div>
+<div class="tab-bar">
+<button class="tab" onclick="switchTab('tiktok-tab')"><i class="fas fa-user"></i> TIKTOK</button>
+<button class="tab" onclick="switchTab('summary-tab')"><i class="fas fa-chart-pie"></i> SUMMARY</button>
+<button class="tab" onclick="switchTab('output-tab')"><i class="fas fa-code"></i> OUTPUT</button>
+<button class="tab active" onclick="switchTab('table-tab')"><i class="fas fa-table"></i> TABLE</button>
+</div>
+
+
+
+<div class="tab-pane active" id="tiktok-tab">
+<div class="card">
+<div class="bg"></div>
+<div class="blob"></div>
+<div class="upload"> 
+  <div class="head"> 
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+      <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg> <p>Browse File to upload!</p>
+  </div> 
+  <label for="file" class="foot"> 
+    <svg fill="#000000" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z"></path></g></svg> 
+    <p>Not selected file</p> 
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="#000000" stroke-width="2"></path> <path d="M19.5 5H4.5" stroke="#000000" stroke-width="2" stroke-linecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="#000000" stroke-width="2"></path> </g></svg>
+  </label> 
+  <input id="file" type="file"> 
+</div>
+</div>
+</div>
+
+<div class="tab-pane" id="summary-tab">
+<div class="summary">
+
+</div>
+</div>
+
+<div class="tab-pane" id="table-tab">
+
+<div style="margin-top: 5px;"> 
+<div style="display:flex; justify-content:space-between; align-items:center; margin:3px 0;">
+<div class="section-header">
+<i class="fas fa-list"></i> PATH OVERVIEW
+</div> 
+<button class="tool-btn" onclick="getTableTab()" id="btn-generate-schema"><i class="fas fa-table"></i> Get Table Tab</button> 
+</div>
+<div id="pathTableContainer" style="overflow-x: hidden; margin-top:10px;">
+<table class="path-table">
+<thead>
+<tr>
+<th rowspan="2">No</th>
+<th colspan="3">Paths</th>
+<th rowspan="2">Note</th>
+</tr>
+<tr>
+<th>Required</th>
+<th>Extracted</th>
+<th>Schema</th>
+</tr>
+</thead>
+<tbody>
+    
+<tr>
+<td>1</td>
+<td id="required-profile" class="status-found">Profile</td>
+<td id="extracted-profile">profile</td>
+<td id="schema-profile">users</td>
+<td id="note-profile">
+<div>
+<span class="found">✓</span>
+<span class="missing">✓</span>
+<span>✓</span>
+</div>
+</td>
+</tr>
+        
+<tr>
+<td>2</td>
+<td id="required-comments" class="status-found">Comments</td>
+<td id="extracted-comments">comments</td>
+<td id="schema-comments">comments</td>
+<td id="note-comments">✓</td>
+</tr>
+        
+<tr>
+<td>3</td>
+<td id="required-blocked">Blocked</td>
+<td id="extracted-blocked">blocked</td>
+<td id="schema-blocked">blocked</td>
+<td id="note-blocked">✓</td>
+</tr>
+        
+<tr>
+<td>4</td>
+<td id="required-following">Following</td>
+<td id="extracted-following">following</td>
+<td id="schema-following">following</td>
+<td id="note-following">✓</td>
+</tr>
+        
+<tr>
+<td>5</td>
+<td id="required-friends">Friends</td>
+<td id="extracted-friends">friends</td>
+<td id="schema-friends">friends</td>
+<td id="note-friends">✓</td>
+</tr>
+        
+<tr>
+<td>6</td>
+<td id="required-posts">Posts</td>
+<td id="extracted-posts">posts</td>
+<td id="schema-posts">posts</td>
+<td id="note-posts">✓</td>
+</tr>
+        
+<tr>
+<td>7</td>
+<td id="required-deletedPosts">Deleted Posts</td>
+<td id="extracted-deletedPosts">deletedPosts</td>
+<td id="schema-deletedPosts">deletedPosts</td>
+<td id="note-deletedPosts">✓</td>
+</tr>
+        
+<tr>
+<td>8</td>
+<td id="required-messages">Messages</td>
+<td id="extracted-messages">messages</td>
+<td id="schema-messages">messages</td>
+<td id="note-messages">✓</td>
+</tr>
+        
+<tr>
+<td>9</td>
+<td id="required-favoriteCollections">Favorite Collections</td>
+<td id="extracted-favoriteCollections">favoriteCollections</td>
+<td id="schema-favoriteCollections">favoriteCollections</td>
+<td id="note-favoriteCollections">✓</td>
+</tr>
+        
+<tr>
+<td>10</td>
+<td id="required-favoriteComments">Favorite Comments</td>
+<td id="extracted-favoriteComments">favoriteComments</td>
+<td id="schema-favoriteComments">favoriteComments</td>
+<td id="note-favoriteComments">✓</td>
+</tr>
+        
+<tr>
+<td>11</td>
+<td id="required-favoriteEffects">Favorite Effects</td>
+<td id="extracted-favoriteEffects">favoriteEffects</td>
+<td id="schema-favoriteEffects">favoriteEffects</td>
+<td id="note-favoriteEffects">✓</td>
+</tr>
+        
+<tr>
+<td>12</td>
+<td id="required-favoriteHashtags">Favorite Hashtags</td>
+<td id="extracted-favoriteHashtags">favoriteHashtags</td>
+<td id="schema-favoriteHashtags">favoriteHashtags</td>
+<td id="note-favoriteHashtags">✓</td>
+</tr>
+        
+<tr>
+<td>13</td>
+<td id="required-favoriteSounds">Favorite Sounds</td>
+<td id="extracted-favoriteSounds">favoriteSounds</td>
+<td id="schema-favoriteSounds">favoriteSounds</td>
+<td id="note-favoriteSounds">✓</td>
+</tr>
+        
+<tr>
+<td>14</td>
+<td id="required-favoriteVideos">Favorite Videos</td>
+<td id="extracted-favoriteVideos">favoriteVideos</td>
+<td id="schema-favoriteVideos">favoriteVideos</td>
+<td id="note-favoriteVideos">✓</td>
+</tr>
+        
+<tr>
+<td>15</td>
+<td id="required-favoriteLikes">Favorite Likes</td>
+<td id="extracted-favoriteLikes">favoriteLikes</td>
+<td id="schema-favoriteLikes">favoriteLikes</td>
+<td id="note-favoriteLikes">✓</td>
+</tr>
+        
+<tr>
+<td>16</td>
+<td id="required-reposts">Reposts</td>
+<td id="extracted-reposts">reposts</td>
+<td id="schema-reposts">reposts</td>
+<td id="note-reposts">✓</td>
+</tr>
+        
+<tr>
+<td>17</td>
+<td id="required-searches">Searches</td>
+<td id="extracted-searches">searches</td>
+<td id="schema-searches">searches</td>
+<td id="note-searches">✓</td>
+</tr>
+        
+<tr>
+<td>18</td>
+<td id="required-liveHistory">Live History</td>
+<td id="extracted-liveHistory">liveHistory</td>
+<td id="schema-liveHistory">liveHistory</td>
+<td id="note-liveHistory">✓</td>
+</tr>
+        
+<tr>
+<td>19</td>
+<td id="required-liveModerator">Live Moderator</td>
+<td id="extracted-liveModerator">liveModerator</td>
+<td id="schema-liveModerator">liveModerator</td>
+<td id="note-liveModerator">✓</td>
+</tr>
+        
+<tr>
+<td>20</td>
+<td id="required-liveWatchHistory">Live Watch History</td>
+<td id="extracted-liveWatchHistory">liveWatchHistory</td>
+<td id="schema-liveWatchHistory">liveWatchHistory</td>
+<td id="note-liveWatchHistory">✓</td>
+</tr>
+        
+<tr>
+<td>21</td>
+<td id="required-loginHistory">Login History</td>
+<td id="extracted-loginHistory">loginHistory</td>
+<td id="schema-loginHistory">loginHistory</td>
+<td id="note-loginHistory">✓</td>
+</tr>
+        
+<tr>
+<td>22</td>
+<td id="required-incomeWallet">Income Wallet</td>
+<td id="extracted-incomeWallet">incomeWallet</td>
+<td id="schema-incomeWallet">incomeWallet</td>
+<td id="note-incomeWallet">✓</td>
+</tr>
+        
+<tr>
+<td>23</td>
+<td id="required-incomeTransaction">Income Transaction</td>
+<td id="extracted-incomeTransaction">incomeTransaction</td>
+<td id="schema-incomeTransaction">incomeTransaction</td>
+<td id="note-incomeTransaction">✓</td>
+</tr>
+</tbody></table></div> 
+</div> 
+</div>
+</div>
+
+<textarea id="txt" style="position: fixed; left:0px;top:0px;bottom:0px;right:0px;display:none"></textarea>
+
+<script>
+function getTableTab(){
+var txt = document.getElementById("txt");
+var tab = document.getElementById("table-tab");
+var app = document.getElementById("app");
+var str = tab.innerHTML;
+app.style.display = "none";
+txt.style.display = "block";
+txt.value = str;
+txt.select();
+}
+</script>
+</body>
+</html>
