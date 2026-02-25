@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+<title>Neo · TikTok → SQL</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="tiktok.css">
+</head>
+<body>
+<div id="app" class="app">
+    <div class="header">
+        <h1><i class="fas fa-database"></i> TikTok · SQL <span class="header-spinner" id="headerSpinner"></span></h1>
+        <div class="header-buttons">
+            <button class="icon-btn" onclick="tiktokEngine.loadSample()" id="sampleBtn">
+                <span class="btn-spinner"></span><span class="btn-text"><i class="fas fa-file-code"></i></span>
+            </button>
+            <button class="icon-btn" onclick="document.getElementById('tiktokFileInput').click()" id="uploadBtn">
+                <span class="btn-spinner"></span><span class="btn-text"><i class="fas fa-upload"></i></span>
+            </button>
+            <input type="file" id="tiktokFileInput" accept=".json,application/json" style="display:none;" onchange="tiktokEngine.loadFile(this.files[0])">
+        </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+    <div class="data-badge" id="dataBadge">📊 No data <span>0 KB</span></div>
+
+    <!-- Three tabs -->
+    <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('tiktok-tab')"><i class="fas fa-user"></i> TIKTOK</button>
+        <button class="tab" onclick="switchTab('summary-tab')"><i class="fas fa-chart-pie"></i> SUMMARY</button>
+<button class="tab" onclick="switchTab('output-tab')"><i class="fas fa-code"></i> OUTPUT</button>
+<button class="tab" onclick="switchTab('table-tab')"><i class="fas fa-table"></i> TABLE</button>
+</div>
+
+    <!-- TikTok Tab (profile + full profile grid only) -->
+    <div class="tab-pane active" id="tiktok-tab">
+        <div class="user-profile-card">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 40px; height:40px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.3rem;"><i class="fas fa-user-circle"></i></div>
+                <div>
+                    <div style="font-weight:600; font-size:1rem;" id="tiktokDisplayName">–</div>
+                    <div style="font-size:0.65rem; opacity:0.8;" id="tiktokUserName">@username</div>
+                </div>
+            </div>
+            <div class="stat-row">
+                <div><span class="stat-number" id="tiktokLikes">0</span><div class="stat-label"><i class="fas fa-heart"></i> Likes</div></div>
+                <div><span class="stat-number" id="tiktokFollowing">0</span><div class="stat-label"><i class="fas fa-user-plus"></i> Following</div></div>
+                <div><span class="stat-number" id="tiktokFollowers">0</span><div class="stat-label"><i class="fas fa-users"></i> Followers</div></div>
+            </div>
+        </div>
+
+        <div class="neo-card" style="padding:10px;">
+            <div class="section-header"><i class="fas fa-id-card"></i> FULL PROFILE</div>
+            <div id="fullProfileGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:6px; row-gap: 12px;">
+                <div class="stat-badge"><i class="fas fa-user"></i> Name: <span id="profileDisplayName">-</span></div>
+                <div class="stat-badge"><i class="fab fa-tiktok"></i> Username: <span id="profileUserName">-</span></div>
+                <div class="stat-badge"><i class="fas fa-envelope"></i> Email: <span id="profileEmail">-</span></div>
+                <div class="stat-badge"><i class="fas fa-birthday-cake"></i> Birth: <span id="profileBirth">-</span></div>
+                <div class="stat-badge"><i class="fas fa-user-friends"></i> Following(profile): <span id="profileFollowingCount">-</span></div>
+                <div class="stat-badge"><i class="fas fa-user-friends"></i> Followers(profile): <span id="profileFollowerCount">-</span></div>
+                <div class="stat-badge"><i class="fas fa-heart"></i> Likes: <span id="profileLikesReceived">-</span></div>
+                <div class="stat-badge"><i class="fas fa-handshake"></i> Friends: <span id="profileFriendsCount">-</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Tab (favorites, messages, activity, path buttons) -->
+<div class="tab-pane" id="summary-tab">
+
+<!-- quick stats badges -->
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
+            <div class="stat-badge"><i class="fas fa-comment"></i> Comments: <span id="commentsCount">0</span></div>
+            <div class="stat-badge"><i class="fas fa-ban"></i> Blocked: <span id="blockedCount">0</span></div>
+            <div class="stat-badge"><i class="fas fa-video"></i> Videos: <span id="videosCount">0</span></div>
+        </div>
+
+        <div class="neo-card" style="padding:8px;">
+            <div class="section-header"><i class="fas fa-star"></i> FAVORITES</div>
+            <div id="favoritesStats" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+        </div>
+        <div class="neo-card" style="padding:8px;">
+            <div class="section-header"><i class="fas fa-comment-dots"></i> MESSAGES</div>
+            <div id="messagesStats" style="display:flex; gap:8px;"></div>
+        </div>
+        <div class="neo-card" style="padding:8px;">
+            <div class="section-header"><i class="fas fa-chart-line"></i> ACTIVITY</div>
+            <div id="activityStats" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+        </div>
+
+        <!-- path buttons -->
+        <div class="grid-auto" style="margin:10px 0;">
+            <button class="tiktok-btn" onclick="getTikTokPath('displayName')" id="btn-tiktok-displayName"><i class="fas fa-tag"></i> DisplayName</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('userName')" id="btn-tiktok-userName"><i class="fab fa-tiktok"></i> Username</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('emailAddress')" id="btn-tiktok-email"><i class="fas fa-envelope"></i> Email</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('birthDate')" id="btn-tiktok-birthday"><i class="fas fa-cake"></i> Birthday</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('likesReceived')" id="btn-tiktok-likes"><i class="fas fa-heart"></i> Likes</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('followingCount')" id="btn-tiktok-followingCount"><i class="fas fa-user-plus"></i> FollowingCnt</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('followerCount')" id="btn-tiktok-followerCount"><i class="fas fa-users"></i> FollowerCnt</button>
+            <button class="tiktok-btn" onclick="getTikTokPath('fullProfile')" id="btn-tiktok-fullProfile"><i class="fas fa-id-card"></i> FullProfile</button>
+        </div>
+    </div>
+
+<!-- Output Tab (sqlData + schema) -->
+<div class="tab-pane" id="output-tab">
+<div id="dld"></div>
+    
+<div style="margin-top: 12px; height:calc(50% - 30px); display: flex;flex-direction: column; position: relative;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin:6px 0;">
+<span class="section-header"><i class="fas fa-code"></i> SQL DATA (JSON)</span>
+<span class="stat-badge" id="resultStats" style="margin-top:4px;"></span>
+<button class="tool-btn" id="btn-tiktok-sqlData" onclick="tiktokEngine.getSqlData()"><i class="fas fa-database"></i> 🗄️ Get SQL Data</button>
+</div>
+<pre id="resultOutput" class="results-output" style="flex:1">Ready. Load TikTok JSON.</pre>
+<button class="tool-btn" onclick="tiktokEngine.copyTruncated()" style="position:absolute; bottom:10px; left:10px; background-color:rgba(224,229,236,0.5);padding:8px"><i class="fas fa-copy"></i></button>
+<button class="tool-btn" onclick="tiktokEngine.downloadTruncated()" style="position:absolute; bottom:10px; left:60px; background-color:rgba(224,229,236,0.5);padding:8px"><i class="fas fa-download"></i></button>
+
+<button class="tool-btn" onclick="tiktokEngine.downloadFull()" style="position:absolute; bottom:10px; right:60px;padding:8px"><i class="fas fa-download"></i></button>
+<button class="tool-btn" onclick="tiktokEngine.copyFull()" style="position:absolute; bottom:10px; right:10px;padding:8px"><i class="fas fa-copy"></i></button>
+</div>
+
+<div style="margin-top: 16px;height:calc(50% - 30px); display: flex;flex-direction: column; gap:0px; position: relative;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin:0;">
+<span class="section-header"><i class="fas fa-database"></i> SQL SCHEMA (DDL)</span>
+<button class="tool-btn" onclick="tiktokEngine.generateSchema()" id="btn-generate-schema"><i class="fas fa-table"></i> Generate Schema</button>
+</div>
+<textarea id="schemaOutput" class="results-output" readonly style="width:100%; flex:1; resize:vertical; font-family:monospace; font-size:0.6rem; padding:8px; background:#1e293b; color:#a5f3fc; border:none; border-radius:16px;">Click "Generate Schema" after loading data.</textarea>
+
+<button class="tool-btn" onclick="tiktokEngine.copySchema()" style="position:absolute; top:50px; right:10px;padding:8px"><i class="fas fa-download"></i></button>
+
+<button class="tool-btn" onclick="tiktokEngine.selectSchema()" style="position:absolute; top:150px; right:10px;padding:8px">
+    <i class="fas fa-i-cursor"></i> Select Schema
+</button>
+
+<button class="tool-btn" onclick="tiktokEngine.downloadSchema()" style="position:absolute; bottom:10px; right:10px;padding:8px"><i class="fas fa-copy"></i></button>
+</div>
+</div>
+
+<div class="tab-pane" id="table-tab">
+<div style="margin-top: 0px;">
+<div class="section-header"><i class="fas fa-list"></i> PATH OVERVIEW</div>
+<div id="pathTableContainer" style="overflow-x: auto;"></div>
+</div>
+</div>
+
+<div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastMessage"></span></div>
+</div>
+
+<script src="jsonPath.js"></script>
+<script src="tiktok.js"></script>
+<script src="tiktok.schema.js"></script>
+
+</body>
+</html>
