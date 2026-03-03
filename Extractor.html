@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TikTok Extractor · Worker and IDB</title>
+  <!-- Font Awesome for icons (free CDN) -->
+  <link rel="stylesheet" href="/assets/beta3/all.min.css">
+  <style>
+    /* ===== GLOBAL VARIABLES (CodePen dark theme replica) ===== */
+    :root {
+      --cp-color-1: #fff;
+      --cp-color-2: #9b9b9b;
+      --cp-color-8: #777;
+      --cp-color-9: #5a5a5a;
+      --cp-color-12: #444;
+      --cp-color-13: #3a3a3a;
+      --cp-color-14: #2a2a2a;
+      --cp-color-15: #222;
+      --cp-color-16: #1a1a1a;
+      --cp-color-17: #111;
+      --cp-color-green: #4caf50;
+      --cp-border: #333;
+      --cp-color-shadow: rgba(0,0,0,0.5);
+      --cp-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --cp-font-family-monospace: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", monospace;
+    }
+    body.light-theme {
+      --cp-color-1: #000;
+      --cp-color-2: #4d4d4d;
+      --cp-color-8: #888;
+      --cp-color-9: #aaa;
+      --cp-color-12: #ccc;
+      --cp-color-13: #ddd;
+      --cp-color-14: #eee;
+      --cp-color-15: #f3f3f3;
+      --cp-color-16: #f8f8f8;
+      --cp-color-17: #fff;
+      --cp-color-green: #2e7d32;
+      --cp-border: #ccc;
+      --cp-color-shadow: rgba(0,0,0,0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      font-family: var(--cp-font-family);
+      font-size: 13px;
+      line-height: 1.5;
+      background-color: var(--cp-color-17);
+      color: var(--cp-color-1);
+    }
+html, body{
+height: 100vh;
+width: 100vw;
+padding: 0;
+margin: 0;
+overflow: hidden;
+}
+body {
+padding-top: env(safe-area-inset-top);
+padding-bottom: calc(env(safe-area-inset-bottom) - 20px);
+padding-left: env(safe-area-inset-left);
+padding-right: env(safe-area-inset-right);
+}
+    /* ===== HEADER (original structure) ===== */
+    .main-header {
+      flex-shrink: 0;
+      height: 54px;
+      background: #111;
+      border-bottom: 1px solid #2d2d2d;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+    .header-wrap {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 16px;
+    }
+    .Logo-module_root-ojP5q {
+      display: flex;
+      align-items: center;
+    }
+    .Logo-module_small-T4UEU {
+      display: flex;
+      align-items: center;
+      color: var(--cp-color-1);
+    }
+    .Logo-module_small-T4UEU svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--cp-color-1);
+    }
+    .ItemTitle-module_root-tJA\+7 {
+      flex: 1;
+    }
+    .ItemTitle-module_title-6kJVb {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--cp-color-1);
+      margin: 0;
+    }
+    .ItemTitle-module_by-nYpg9 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cp-color-8);
+    }
+    .Button-module_root-xw-9D {
+      background: transparent;
+      border: none;
+      color: var(--cp-color-8);
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .Button-module_root-xw-9D:hover {
+      background: var(--cp-color-14);
+      color: var(--cp-color-1);
+    }
+    .run svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+    #uploadBtn, #run, #themeToggle, #downloadBtn {
+      white-space: nowrap;
+    }
+
+    /* ===== PAGE WRAP (main content) ===== */
+    .page-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Tab bar */
+    .custom-tab-bar {
+      display: flex;
+      background: var(--cp-color-16);
+      border-bottom: 1px solid var(--cp-border);
+      padding: 0 10px;
+      flex-shrink: 0;
+    }
+    .custom-tab-btns {
+  display: flex;
+  background: var(--cp-color-11);
+  border-bottom: 1px solid var(--cp-border);
+  padding: 0 1px;
+  flex-shrink: 1;
+  
+}
+.custom-tab-btns button{
+padding: 6px!important;
+}
+ .custom-tab-bar .custom-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--cp-color-8);
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: 0.2s;
+      flex: 1;
+    }
+    .custom-tab-bar .custom-tab-btn:hover {
+      color: var(--cp-color-1);
+    }
+    .custom-tab-bar .custom-tab-btn.active {
+      color: var(--cp-color-1);
+      border-bottom-color: var(--cp-color-green);
+    }
+
+    /* Toggle switch (cleaned) */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+      padding: 0 10px;
+    }
+    .toggle-label {
+      margin-right: 8px;
+      font-size: 0.8rem;
+      color: var(--cp-color-8);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .spn{
+      position: absolute;
+      cursor: pointer;
+      top: 5px; left: 0; right: 0; bottom: 0;
+     
+      transition: 0.2s;
+      font-size: 9px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--cp-color-13);
+      transition: 0.2s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: var(--cp-color-1);
+      transition: 0.2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--cp-color-green);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Tab container & panes */
+    .custom-tab-container {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--cp-color-17);
+    }
+    .custom-tab-pane {
+      display: none;
+      height: 100%;
+      width: 100%;
+      overflow: auto;
+      padding: 5px;
+    }
+    .custom-tab-pane.active {
+      display: block;
+    }
+
+    /* ===== TABLE STYLES (summary table & modals) ===== */
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: var(--cp-color-16);
+      border: 1px solid var(--cp-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .result-table th {
+      background: var(--cp-color-14);
+      color: var(--cp-color-8);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-size: 0.7rem;
+      padding: 8px 6px;
+      text-align: left;
+      border-bottom: 2px solid var(--cp-color-12);
+    }
+    .result-table td {
+      padding: 6px;
+      border-bottom: 1px solid var(--cp-color-15);
+      color: var(--cp-color-2);
+      background: var(--cp-color-17);
+    }
+    .result-table tbody tr:hover td {
+      background: var(--cp-color-15);
+      color: var(--cp-color-1);
+    }
+    .result-table td:first-child {
+      font-family: monospace;
+      width: 10%;
+    }
+    .result-table td:nth-child(2) {
+      width: 50%;
+    }
+    .result-table td:nth-child(3) {
+      width: 20%;
+      text-align: right;
+    }
+    .result-table td:last-child {
+      width: 20%;
+      text-align: center;
+    }
+    .view-icon {
+      cursor: pointer;
+      color: var(--cp-color-8);
+      transition: color 0.2s;
+    }
+    .view-icon:hover {
+      color: var(--cp-color-green);
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--cp-color-16);
+      border: 1px solid var(--cp-border);
+      border-radius: 8px;
+      max-width: 90%;
+      max-height: 80%;
+      overflow: auto;
+      padding: 20px;
+      box-shadow: var(--cp-color-shadow) 0 10px 30px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .modal-header h3 {
+      color: var(--cp-color-1);
+      margin: 0;
+    }
+    .close-modal {
+      background: none;
+      border: none;
+      color: var(--cp-color-8);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0 5px;
+    }
+    .close-modal:hover {
+      color: var(--cp-color-1);
+    }
+    .sample-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .sample-table th {
+      background: var(--cp-color-14);
+      color: var(--cp-color-8);
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--cp-color-12);
+    }
+    .sample-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--cp-color-15);
+      color: var(--cp-color-2);
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Log container (Chart tab) */
+    .log-container {
+      background: var(--cp-color-16);
+      border: 1px solid var(--cp-border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .log-header {
+      padding: 0.75rem 1rem;
+      background: var(--cp-color-14);
+      font-weight: 600;
+      color: var(--cp-color-8);
+    }
+    .log-content {
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+      min-height: 300px;
+      height: 300px;
+    }
+    
+    .log-entry {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid var(--cp-border);
+    }
+    .log-error { color: #ef4444; }
+    .log-success { color: #10b981; }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      top: 50%;
+      right: 20px;
+      background: var(--cp-color-16);
+      border: 1px solid var(--cp-border);
+      border-radius: 8px;
+      padding: 12px 20px;
+      color: var(--cp-color-1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+    #toast.error { border-left: 4px solid #ef4444; }
+    #toast.success { border-left: 4px solid #10b981; }
+    #toast.info { border-left: 4px solid #3b82f6; }
+
+    /* ===== FOOTER (from footer.html) ===== */
+    footer {
+      font-family: var(--cp-font-family);
+      height: 30px;
+      line-height: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      white-space: nowrap;
+      color: var(--cp-color-9);
+      background: var(--cp-color-14);
+      z-index: 10;
+      font-size: 1rem;
+      border-top: 1px solid var(--cp-color-13);
+      flex-shrink: 0;
+      padding: 0 8px;
+      box-sizing: border-box;
+    }
+    .footer-left, .footer-center, .footer-right {
+      display: flex;
+      height: 100%;
+      padding: 5px 0;
+      z-index: 1;
+      align-items: center;
+      gap: 4px;
+    }
+    .footer-left { justify-content: flex-start; }
+    .footer-center { justify-content: center; }
+    .footer-right { justify-content: flex-end; }
+
+    /* All footer buttons + zoom select */
+    footer button,
+    .zoom-select, .btn {
+      height: 20px !important;
+      line-height: 12.48px !important;
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 50px;
+      width: 50px;
+      border-radius: 2px;
+      font-size: 10.4px;
+      margin: 0 2px;
+      padding: 3px 7px !important;
+      background: var(--cp-color-13);
+      border: none;
+      color: var(--cp-color-8);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button.btn{
+      font-size: 12px;
+      padding:6px 15px!important;
+      line-height: 15px !important;
+    }
+    button.btn i{
+      margin-right: 5px;
+    }
+    footer button:hover, .btn:hover {
+      background: var(--cp-color-12);
+      color: var(--cp-color-1);
+    }
+    .zoom-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--cp-color-13);
+      text-align: center;
+      padding: 0 4px;
+      cursor: pointer;
+    }
+    .zoom-select:hover {
+      background: var(--cp-color-12);
+      color: var(--cp-color-1);
+    }
+    .editor-state {
+     
+      width: 1px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--cp-color-13);
+      border: 1px solid var(--cp-color-8);
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body class="dark-theme">
+  <!-- HEADER (original with Upload, Extract, theme toggle, Download) -->
+  <header class="main-header" id="main-header">
+    <div class="header-wrap">
+     
+      <div class="ItemTitle-module_root-tJA+7">
+        <h1 class="ItemTitle-module_title-6kJVb">TikTok Extractor</h1>
+        <div class="ItemTitle-module_by-nYpg9">
+          <span>by JFR</span>
+
+        </div>
+      </div>
+      <button id="themeToggle" class="Button-module_root-xw-9D" title="Toggle theme">
+        <i class="fa-regular fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT (tabs) -->
+  <div class="page-wrap">
+    <div class="custom-tab-bar">
+      <button class="custom-tab-btn active" data-tab="tab1">Table</button>
+      <button class="custom-tab-btn" data-tab="tab2">Chart</button>
+      <button class="custom-tab-btn" data-tab="tab3">Settings</button>
+      <button class="custom-tab-btn" data-tab="tab4">About</button>
+    
+    </div>
+   <div class="custom-tab-btns">
+         <input type="file" id="uploadFileInput" accept=".json,application/json" style="display:none;">
+      <button id="uploadBtn" class="Button-module_root-xw-9D" title="Upload TikTok JSON">
+        <i class="fa-regular fa-cloud-upload"></i> Upload
+      </button>
+      <button id="run" class="Button-module_root-xw-9D run" title="Extract Data">
+        <svg viewBox="0 0 20 20">
+          <path d="M10.66 1.91a.833.833 0 0 1 1.18 0l2.5 2.5a.833.833 0 0 1 0 1.18l-2.5 2.5a.833.833 0 1 1-1.18-1.18l1.078-1.077h-1.321C7.46 5.833 5 8.293 5 11.25c0 2.956 2.46 5.417 5.417 5.417 2.956 0 5.416-2.46 5.416-5.417a.833.833 0 1 1 1.667 0c0 3.877-3.207 7.083-7.083 7.083-3.877 0-7.084-3.206-7.084-7.083s3.207-7.083 7.084-7.083h1.321l-1.077-1.078a.833.833 0 0 1 0-1.178z"></path>
+        </svg> Extract
+      </button>
+
+      <a id="downloadBtn" class="Button-module_root-xw-9D" title="Download">Download</a>
+      <div class="toggle-container">
+<label class="switch">
+  <input type="checkbox" id="cleanedToggle" checked>
+  <span class="slider"></span>
+  <span class="spn">Cleaned</span>
+</label>
+</div>
+   </div>
+<div class="custom-tab-btns" style="margin-top: 5px;">
+ <button id="loadExtracted" class="btn" title="Load extracted data">
+<i class="fa-regular fa-cloud-download-alt"></i>Load
+</button>
+<button id="storeExtracted" class="btn" title="Save as latest">
+<i class="fa-regular fa-save"></i> Store
+</button>
+<button id="saveCleanedAsUserBtn" class="btn" title="Save data under username">
+<i class="fa-regular fa-database"></i> Save
+</button>
+</div>
+
+    <div class="custom-tab-container">
+      <!-- Tab 1: Summary Table -->
+      <div id="tab1" class="custom-tab-pane active">
+        <div id="summaryTableContainer">
+          <p>Click <strong>Run</strong> to extract data, or <strong>Load</strong> to load stored data.</p>
+        </div>
+      </div>
+      <!-- Tab 2: Log Viewer -->
+      <div id="tab2" class="custom-tab-pane">
+        <div class="log-container">
+          <div class="log-header"><i class="fa-regular fa-list-tree"></i> Log</div>
+          <div id="logViewer" class="log-content"></div>
+        </div>
+      </div>
+      <!-- Tab 3: Settings (placeholder) -->
+      <div id="tab3" class="custom-tab-pane">Settings panel.</div>
+      <!-- Tab 4: About (placeholder) -->
+      <div id="tab4" class="custom-tab-pane">About this demo.</div>
+    </div>
+  </div>
+
+  <!-- FOOTER (new compact design) -->
+  <footer>
+    <div class="footer-left">
+      <select class="zoom-select" title="Zoom">
+        <option value="1.0">1×</option>
+        <option value="0.5">0.5×</option>
+        <option value="0.25">0.25×</option>
+      </select>
+    </div>
+    <div class="footer-center">
+      <span id="username">username</span>
+    </div>
+    <div class="footer-right">
+      <span class="editor-state" title="Status"></span>
+      <button id="embedBtn" title="Embed">
+        <i class="fa-regular fa-code"></i>
+      </button>
+      <button id="clearExtracted" title="Clear latest">
+        <i class="fa-regular fa-trash-alt"></i>
+      </button>
+      <button id="clearFullDataBtn" title="Clear full data">
+        <i class="fa-regular fa-trash"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Toast notification container -->
+  <div id="toast"></div>
+
+  <!-- SCRIPTS (TikTokExtractor core + UI) -->
+  <script>
+    // Global cleaned flag
+    window.cleaned = false;
+    document.getElementById('cleanedToggle')?.addEventListener('change', (e) => {
+      window.cleaned = e.target.checked;
+    });
+
+// extract.js – TikTok data extraction core (with EXTRACTED store and clear)
+
+window.JIK_PATH_MAPPING = {
+  'Profile And Settings.Profile Info.ProfileMap': {
+    table: 'users',
+    columns: {
+      'userName': 'username',
+      'displayName': 'display_name',
+      'emailAddress': 'email',
+      'bioDescription': 'bio_description',
+      'birthDate': 'birth_date',
+      'accountRegion': 'account_region',
+      'followerCount': 'follower_count',
+      'followingCount': 'following_count',
+      'likesReceived': 'likes_count',
+      'profilePhoto': 'profile_photo'
+    },
+    dateFields: ['birth_date'],
+    numericFields: ['follower_count', 'following_count', 'likes_count']
+  },
+  'Comment.Comments.CommentsList': {
+    table: 'comments',
+    isArray: true,
+    columns: {
+      'date': 'comment_date',
+      'comment': 'comment_text',
+      'photo': 'photo_url',
+      'url': 'video_url'
+    },
+    dateFields: ['comment_date']
+  },
+  'Direct Message.Direct Messages.ChatHistory': {
+    table: 'direct_messages',
+    isDynamic: true,
+    dynamicKeyColumn: 'chat_identifier',
+    columns: {
+      'Date': 'message_date',
+      'From': 'sender_username',
+      'Content': 'message_content'
+    },
+    dateFields: ['message_date']
+  },
+  'Direct Message.Group Chat.GroupChat': {
+    table: 'group_chats',
+    isDynamic: true,
+    dynamicKeyColumn: 'group_chat_identifier',
+    columns: {
+      'Date': 'message_date',
+      'From': 'sender_username',
+      'Content': 'message_content'
+    },
+    dateFields: ['message_date']
+  },
+  'Income+ Wallet.Coin Purchase History.CoinPurchaseHistoryList': {
+    table: 'coin_purchases',
+    isArray: true,
+    columns: {
+      'Date': 'purchase_date',
+      'Type': 'purchase_type',
+      'CoinAmount': 'coin_amount'
+    },
+    dateFields: ['purchase_date'],
+    numericFields: ['coin_amount']
+  },
+  'Likes and Favorites.Favorite Collection.FavoriteCollectionList': {
+    table: 'favorite_collections',
+    isArray: true,
+    columns: {
+      'Date': 'favorite_date',
+      'FavoriteCollection': 'collection_name'
+    },
+    dateFields: ['favorite_date']
+  },
+  'Likes and Favorites.Favorite Comment.FavoriteCommentList': {
+    table: 'favorite_comments',
+    isArray: true,
+    columns: {
+      'FavoriteComment': 'comment_text'
+    }
+  },
+  'Likes and Favorites.Favorite Effects.FavoriteEffectsList': {
+    table: 'favorite_effects',
+    isArray: true,
+    columns: {
+      'Date': 'effect_date',
+      'EffectLink': 'effect_link'
+    },
+    dateFields: ['effect_date']
+  },
+  'Likes and Favorites.Favorite Hashtags.FavoriteHashtagList': {
+    table: 'favorite_hashtags',
+    isArray: true,
+    columns: {
+      'Date': 'favorite_date',
+      'Link': 'hashtag_link'
+    },
+    dateFields: ['favorite_date']
+  },
+  'Likes and Favorites.Favorite Sounds.FavoriteSoundList': {
+    table: 'favorite_sounds',
+    isArray: true,
+    columns: {
+      'Date': 'favorite_date',
+      'Link': 'sound_link'
+    },
+    dateFields: ['favorite_date']
+  },
+  'Likes and Favorites.Favorite Videos.FavoriteVideoList': {
+    table: 'favorite_videos',
+    isArray: true,
+    columns: {
+      'Date': 'favorite_date',
+      'Link': 'video_link'
+    },
+    dateFields: ['favorite_date']
+  },
+  'Likes and Favorites.Like List.ItemFavoriteList': {
+    table: 'liked_videos',
+    isArray: true,
+    columns: {
+      'date': 'like_date',
+      'link': 'video_link'
+    },
+    dateFields: ['like_date']
+  },
+  'Post.Posts.VideoList': {
+    table: 'posts',
+    isArray: true,
+    columns: {
+      'Date': 'post_date',
+      'Link': 'video_link',
+      'Likes': 'likes_count',
+      'WhoCanView': 'who_can_view',
+      'AllowComments': 'allow_comments',
+      'AllowStitches': 'allow_stitches',
+      'AllowDuets': 'allow_duets',
+      'AllowStickers': 'allow_stickers',
+      'AllowSharingToStory': 'allow_sharing_to_story',
+      'ContentDisclosure': 'content_disclosure'
+    },
+    dateFields: ['post_date'],
+    numericFields: ['likes_count']
+  },
+  'Post.Recently Deleted Posts.PostList': {
+    table: 'deleted_posts',
+    isArray: true,
+    columns: {
+      'Date': 'post_date',
+      'DateDeleted': 'delete_date',
+      'Link': 'video_link',
+      'Likes': 'likes_count',
+      'ContentDisclosure': 'content_disclosure',
+      'AIGeneratedContent': 'ai_generated',
+      'Sound': 'sound_used',
+      'Location': 'location',
+      'Title': 'title',
+      'AddYoursText': 'add_yours_text'
+    },
+    dateFields: ['post_date', 'delete_date'],
+    numericFields: ['likes_count']
+  },
+  'Profile And Settings.Block List.BlockList': {
+    table: 'blocked_users',
+    isArray: true,
+    columns: {
+      'Date': 'block_date',
+      'UserName': 'blocked_username'
+    },
+    dateFields: ['block_date']
+  },
+  'Profile And Settings.Follower.FansList': {
+    table: 'followers',
+    isArray: true,
+    columns: {
+      'Date': 'date',
+      'UserName': 'username'
+    },
+    dateFields: ['date']
+  },
+  'Profile And Settings.Following.Following': {
+    table: 'following',
+    isArray: true,
+    columns: {
+      'Date': 'date',
+      'UserName': 'username'
+    },
+    dateFields: ['date']
+  },
+  'TikTok Live.Go Live History.GoLiveList': {
+    table: 'live_sessions',
+    isArray: true,
+    columns: {
+      'LiveStartTime': 'live_start_time',
+      'RoomId': 'room_id',
+      'CoverUri': 'cover_uri',
+      'ReplayUrl': 'replay_url',
+      'TotalEarning': 'total_earning',
+      'LiveEndTime': 'live_end_time',
+      'TotalLike': 'total_likes',
+      'TotalView': 'total_views',
+      'QualitySetting': 'quality_setting',
+      'RoomTitle': 'room_title'
+    },
+    dateFields: ['live_start_time', 'live_end_time'],
+    numericFields: ['total_likes', 'total_views']
+  },
+  'TikTok Live.Watch Live History.WatchLiveMap': {
+    table: 'watched_lives',
+    isDynamic: true,
+    dynamicKeyColumn: 'room_id',
+    columns: {
+      'WatchTime': 'watch_time',
+      'Link': 'live_link'
+    },
+    dateFields: ['watch_time']
+  },
+  'TikTok Live.Watch Live History.WatchLiveMap.*.Comments': {
+    table: 'live_comments',
+    isNestedArray: true,
+    parentKey: 'room_id',
+    columns: {
+      'CommentTime': 'comment_time',
+      'CommentContent': 'comment_content',
+      'RawTime': 'raw_time'
+    },
+    dateFields: ['comment_time'],
+    integerFields: ['raw_time']
+  },
+  'Your Activity.Searches.SearchList': {
+    table: 'searches',
+    isArray: true,
+    columns: {
+      'Date': 'search_date',
+      'SearchTerm': 'search_term'
+    },
+    dateFields: ['search_date']
+  },
+  'Your Activity.Login History.LoginHistoryList': {
+    table: 'login_history',
+    isArray: true,
+    columns: {
+      'Date': 'login_date',
+      'IP': 'ip_address',
+      'DeviceModel': 'device_model',
+      'DeviceSystem': 'device_system',
+      'NetworkType': 'network_type',
+      'Carrier': 'carrier'
+    },
+    dateFields: ['login_date']
+  },
+  'Your Activity.Hashtag.HashtagList': {
+    table: 'user_hashtags',
+    isArray: true,
+    columns: {
+      'HashtagName': 'hashtag_name',
+      'HashtagLink': 'hashtag_link'
+    }
+  },
+  'Your Activity.Reposts.RepostList': {
+    table: 'reposts',
+    isArray: true,
+    columns: {
+      'Date': 'repost_date',
+      'Link': 'video_link'
+    },
+    dateFields: ['repost_date']
+  },
+  'Your Activity.Share History.ShareHistoryList': {
+    table: 'share_history',
+    isArray: true,
+    columns: {
+      'Date': 'share_date',
+      'SharedContent': 'shared_content',
+      'Link': 'shared_link',
+      'Method': 'share_method'
+    },
+    dateFields: ['share_date']
+  },
+  'Your Activity.Purchases.SendGifts.SendGifts': {
+    table: 'sent_gifts',
+    isArray: true,
+    columns: {
+      'Date': 'send_date',
+      'GiftAmount': 'gift_amount',
+      'UserName': 'recipient_username'
+    },
+    dateFields: ['send_date'],
+    numericFields: ['gift_amount']
+  },
+  'Your Activity.Purchases.BuyGifts.BuyGifts': {
+    table: 'purchased_gifts',
+    isArray: true,
+    columns: {
+      'Date': 'purchase_date',
+      'Price': 'price'
+    },
+    dateFields: ['purchase_date'],
+    numericFields: ['price']
+  },
+  'TikTok Shop.Product Browsing History.ProductBrowsingHistories': {
+    table: 'product_browsing',
+    isArray: true,
+    columns: {
+      'browsing_date': 'browsing_date',
+      'shop_name': 'shop_name',
+      'product_name': 'product_name'
+    },
+    dateFields: ['browsing_date']
+  },
+  'Activity.Story.StoriesList': {
+    table: 'stories',
+    isArray: true,
+    columns: {
+      'Date': 'story_date',
+      'StoryLink': 'story_link'
+    },
+    dateFields: ['story_date']
+  },
+  'Activity.Watch History.WatchHistoryList': {
+    table: 'watch_history',
+    isArray: true,
+    columns: {
+      'Date': 'watch_date',
+      'VideoLink': 'video_link'
+    },
+    dateFields: ['watch_date']
+  },
+  'Activity.App Settings.AppSettings': {
+    table: 'app_settings',
+    columns: {
+      'Language': 'language',
+      'Region': 'region',
+      'AutoPlay': 'auto_play',
+      'DownloadQuality': 'download_quality',
+      'UploadQuality': 'upload_quality'
+    }
+  },
+  'Ad.TikTok Ads Manager.AdsList': {
+    table: 'ads',
+    isArray: true,
+    columns: {
+      'Date': 'ad_date',
+      'AdTitle': 'ad_title',
+      'Budget': 'budget',
+      'Status': 'status'
+    },
+    dateFields: ['ad_date'],
+    numericFields: ['budget']
+  },
+  'Billing.Payment Methods.PaymentMethodsList': {
+    table: 'payment_methods',
+    isArray: true,
+    columns: {
+      'Method': 'payment_method',
+      'LastFour': 'last_four',
+      'Expiry': 'expiry_date'
+    },
+    dateFields: ['expiry_date']
+  },
+  'Billing.Transaction History.TransactionList': {
+    table: 'transactions',
+    isArray: true,
+    columns: {
+      'Date': 'transaction_date',
+      'Amount': 'amount',
+      'Type': 'transaction_type',
+      'Status': 'status'
+    },
+    dateFields: ['transaction_date'],
+    numericFields: ['amount']
+  },
+  'Profile And Settings.Profile Preferences.ProfilePreferences': {
+    table: 'profile_preferences',
+    columns: {
+      'PrivateAccount': 'private_account',
+      'AllowDuets': 'allow_duets',
+      'AllowComments': 'allow_comments',
+      'AllowStitches': 'allow_stitches',
+      'AllowDownloads': 'allow_downloads'
+    }
+  },
+  'Profile And Settings.Verified.VerifiedInfo': {
+    table: 'verification_info',
+    columns: {
+      'Verified': 'is_verified',
+      'VerifiedDate': 'verification_date',
+      'BadgeType': 'badge_type'
+    },
+    dateFields: ['verification_date']
+  }
+};
+
+    const TikTokExtractor = (function() {
+      const DB_NAME = 'TikTokExtractor';
+      const DB_VERSION = 2;
+      const STORES = { FULL: 'fullData', EXTRACTED: 'extracted' };
+
+      async function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onerror = () => reject(req.error);
+          req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORES.FULL)) db.createObjectStore(STORES.FULL);
+            if (!db.objectStoreNames.contains(STORES.EXTRACTED)) db.createObjectStore(STORES.EXTRACTED);
+          };
+          req.onsuccess = () => resolve(req.result);
+        });
+      }
+
+      async function loadFullData(db) {
+        if (!db.objectStoreNames.contains(STORES.FULL)) return null;
+        const tx = db.transaction(STORES.FULL, 'readonly');
+        const store = tx.objectStore(STORES.FULL);
+        return new Promise((resolve, reject) => {
+          const req = store.get('data');
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function saveExtracted(data, key = 'latest') {
+        const db = await openDB();
+        const tx = db.transaction(STORES.EXTRACTED, 'readwrite');
+        const store = tx.objectStore(STORES.EXTRACTED);
+        return new Promise((resolve, reject) => {
+          const req = store.put(data, key);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function loadExtracted(key = 'latest') {
+        const db = await openDB();
+        if (!db.objectStoreNames.contains(STORES.EXTRACTED)) return null;
+        const tx = db.transaction(STORES.EXTRACTED, 'readonly');
+        const store = tx.objectStore(STORES.EXTRACTED);
+        return new Promise((resolve, reject) => {
+          const req = store.get(key);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function clearExtracted(key = 'latest') {
+        const db = await openDB();
+        if (!db.objectStoreNames.contains(STORES.EXTRACTED)) return;
+        const tx = db.transaction(STORES.EXTRACTED, 'readwrite');
+        const store = tx.objectStore(STORES.EXTRACTED);
+        return new Promise((resolve, reject) => {
+          const req = store.delete(key);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function storeFullData(data) {
+        const db = await openDB();
+        const tx = db.transaction(STORES.FULL, 'readwrite');
+        const store = tx.objectStore(STORES.FULL);
+        return new Promise((resolve, reject) => {
+          const req = store.put(data, 'data');
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function clearFullData() {
+        const db = await openDB();
+        if (!db.objectStoreNames.contains(STORES.FULL)) return;
+        const tx = db.transaction(STORES.FULL, 'readwrite');
+        const store = tx.objectStore(STORES.FULL);
+        return new Promise((resolve, reject) => {
+          const req = store.delete('data');
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+      
+async function getStoreNames() {
+  const db = await openDB();
+  const storeNames = Array.from(db.objectStoreNames);
+  db.close();
+  return storeNames;
+}
+
+
+
+
+      // Helper functions (simplified)
+      function traversePath(obj, segments, context = {}) {
+        if (!obj || segments.length === 0) return obj ? [{ value: obj, context }] : [];
+        const [curr, ...rest] = segments;
+        if (curr === '*') {
+          if (typeof obj !== 'object' || obj === null) return [];
+          const results = [];
+          for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+              results.push(...traversePath(obj[key], rest, { ...context, _wildcard: key }));
+            }
+          }
+          return results;
+        } else {
+          const next = obj[curr];
+          return next === undefined ? [] : traversePath(next, rest, context);
+        }
+      }
+
+      function mapFields(item, columnMap) {
+        const row = {};
+        for (const [src, tgt] of Object.entries(columnMap)) {
+          if (item[src] !== undefined) row[tgt] = item[src];
+        }
+        return row;
+      }
+
+      function processValue(value, mapping, context = {}) {
+        const { table, columns, isArray } = mapping;
+        const rows = [];
+        const arr = isArray ? (Array.isArray(value) ? value : []) : [value];
+        for (const item of arr) {
+          if (item && typeof item === 'object') {
+            const row = mapFields(item, columns);
+            if (context._wildcard !== undefined) row.wildcard_key = context._wildcard;
+            rows.push(row);
+          }
+        }
+        return rows;
+      }
+
+      function checkMissingMappings(data) {
+        const missing = [];
+        for (const pathStr of Object.keys(window.JIK_PATH_MAPPING)) {
+          const segments = pathStr.split('.');
+          const matches = traversePath(data, segments);
+          if (matches.length === 0) missing.push(pathStr);
+        }
+        return missing;
+      }
+
+      return {
+        async extractData() {
+          if (!window.JIK_PATH_MAPPING) throw new Error('JIK_PATH_MAPPING not found');
+          const db = await openDB();
+          const data = await loadFullData(db);
+          if (!data) throw new Error('No data found in IndexedDB. Please upload a TikTok JSON file first.');
+          const extracted = {};
+          for (const [pathStr, mapping] of Object.entries(window.JIK_PATH_MAPPING)) {
+            const segments = pathStr.split('.');
+            const matches = traversePath(data, segments);
+            for (const { value, context } of matches) {
+              if (value == null) continue;
+              const rows = processValue(value, mapping, context);
+              const tableName = mapping.table;
+              if (!extracted[tableName]) extracted[tableName] = [];
+              extracted[tableName].push(...rows);
+            }
+          }
+          return extracted;
+        },
+        findFriends: (arrA, arrB, key) => {
+          const mapB = new Map(arrB.map(item => [item[key], item]));
+          return arrA.filter(a => mapB.has(a[key])).map(a => ({ [key]: a[key], date_following: a.date, date_follower: mapB.get(a[key]).date }));
+        },
+        removeFollower: (obj, keyName) => { const o = { ...obj }; delete o[keyName]; return o; },
+        removeNullOrNA: (arr, key) => arr.filter(item => {
+          const val = item[key];
+          return val !== null && !(typeof val === 'string' && val.toUpperCase() === 'N/A');
+        }),
+        saveExtracted,
+        loadExtracted,
+        clearExtracted,
+        storeFullData,
+        clearFullData,
+        checkMissingMappings,
+        getStoreNames
+      };
+    })();
+
+    // ========== UI and event handlers ==========
+    (function() {
+      // Toast helper
+      const toast = document.getElementById('toast');
+      function showToast(message, type = 'info', duration = 3000) {
+        toast.textContent = message;
+        toast.className = `show ${type}`;
+        setTimeout(() => toast.classList.remove('show'), duration);
+      }
+
+      // DOM elements
+      const runBtn = document.getElementById('run');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const storeBtn = document.getElementById('storeExtracted');
+      const clearBtn = document.getElementById('clearExtracted');
+      const loadBtn = document.getElementById('loadExtracted');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const fileInput = document.getElementById('uploadFileInput');
+      const clearFullBtn = document.getElementById('clearFullDataBtn');
+      const saveAsUserBtn = document.getElementById('saveCleanedAsUserBtn');
+      const summaryContainer = document.getElementById('summaryTableContainer');
+      const logViewer = document.getElementById('logViewer');
+
+      let currentExtracted = null;
+
+      function addLog(message, type = 'info') {
+        if (!logViewer) return;
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logViewer.appendChild(entry);
+        logViewer.scrollTop = logViewer.scrollHeight;
+      }
+
+      function renderSummaryTable(extracted) {
+        const tableNames = Object.keys(extracted);
+        let html = '<table class="result-table"><thead><tr><th>#</th><th>Table Name</th><th>Count</th><th>Actions</th></tr></thead><tbody>';
+        tableNames.sort().forEach((name, index) => {
+          const count = extracted[name].length;
+          html += `<tr><td>${index + 1}</td><td>${name}</td><td>${count.toLocaleString()}</td><td><i class="fa-regular fa-eye view-icon" data-table="${name}"></i></td></tr>`;
+        });
+        html += '</tbody></table>';
+        summaryContainer.innerHTML = html;
+      }
+
+      function openModal(tableName) {
+        if (!currentExtracted || !currentExtracted[tableName]) return;
+        const data = currentExtracted[tableName];
+        const sample = data.slice(0, 5);
+        const columns = sample.length > 0 ? Object.keys(sample[0]) : [];
+        let sampleHtml = '<table class="sample-table"><thead><tr>';
+        columns.forEach(col => sampleHtml += `<th>${col}</th>`);
+        sampleHtml += '</tr></thead><tbody>';
+        sample.forEach(row => {
+          sampleHtml += '<tr>';
+          columns.forEach(col => {
+            let val = row[col];
+            if (val === null || val === undefined) val = '';
+            if (typeof val === 'object') val = JSON.stringify(val).slice(0, 50);
+            sampleHtml += `<td>${val}</td>`;
+          });
+          sampleHtml += '</tr>';
+        });
+        sampleHtml += '</tbody></table>';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>${tableName} (first 5 rows)</h3>
+              <button class="close-modal">&times;</button>
+            </div>
+            ${sampleHtml}
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        overlay.querySelector('.close-modal').addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); } });
+      }
+
+      // Run extraction
+      runBtn.addEventListener('click', async () => {
+        summaryContainer.innerHTML = '';
+        addLog('Starting extraction...', 'info');
+        try {
+          const extracted = await TikTokExtractor.extractData();
+          addLog(`Extracted raw data with ${Object.keys(extracted).length} tables`, 'info');
+
+          const followers = extracted.followers || [];
+          const following = extracted.following || [];
+
+          if (window.cleaned) {
+            extracted.friends = TikTokExtractor.findFriends(following, followers, 'username');
+            addLog(`Friends table created with ${extracted.friends.length} mutual entries`, 'info');
+            delete extracted.followers;
+            addLog('Removed followers table', 'info');
+            if (extracted.friends) extracted.friends = TikTokExtractor.removeNullOrNA(extracted.friends, 'username');
+            if (extracted.following) extracted.following = TikTokExtractor.removeNullOrNA(extracted.following, 'username');
+            addLog('Cleaned null/NA entries', 'info');
+          }
+
+          currentExtracted = extracted;
+          renderSummaryTable(extracted);
+          document.getElementById("username").innerText = extracted.users[0].username;
+          addLog('Extraction complete. Click the eye icon to preview data.', 'success');
+        } catch (err) {
+          addLog(`Error: ${err.message}`, 'error');
+          showToast(err.message, 'error');
+        }
+      });
+
+      summaryContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('view-icon')) {
+          openModal(e.target.getAttribute('data-table'));
+        }
+      });
+
+      uploadBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          await TikTokExtractor.storeFullData(data);
+          addLog(`Stored full data from ${file.name}`, 'success');
+          showToast('Full data stored successfully', 'success');
+          const missing = TikTokExtractor.checkMissingMappings(data);
+          if (missing.length > 0) {
+            addLog(`Missing mappings for: ${missing.join(', ')}`, 'warn');
+            showToast('Some mappings are missing – check log', 'info');
+          }
+        } catch (err) {
+          addLog(`Upload error: ${err.message}`, 'error');
+          showToast('Error reading JSON file', 'error');
+        } finally {
+          fileInput.value = '';
+        }
+      });
+
+      clearFullBtn.addEventListener('click', async () => {
+        try {
+          await TikTokExtractor.clearFullData();
+          addLog('Full data cleared from IndexedDB', 'success');
+          showToast('Full data cleared', 'success');
+        } catch (err) {
+          addLog(`Error clearing full data: ${err.message}`, 'error');
+          showToast('Error clearing full data', 'error');
+        }
+      });
+
+      saveAsUserBtn.addEventListener('click', async () => {
+        if (!currentExtracted) {
+          addLog('No extracted data to save. Run extraction first.', 'warn');
+          showToast('No data to save', 'warn');
+          return;
+        }
+        let username = 'unknown';
+        if (currentExtracted.users && currentExtracted.users.length > 0 && currentExtracted.users[0].username) {
+          username = currentExtracted.users[0].username;
+        }
+        try {
+          await TikTokExtractor.saveExtracted(currentExtracted, username);
+          addLog(`Saved extracted data under key "${username}"`, 'success');
+          showToast(`Saved as ${username}`, 'success');
+        } catch (err) {
+          addLog(`Error saving: ${err.message}`, 'error');
+          showToast('Error saving data', 'error');
+        }
+      });
+
+      storeBtn.addEventListener('click', async () => {
+        if (!currentExtracted) {
+          addLog('No extracted data to store. Run extraction first.', 'warn');
+          return;
+        }
+        try {
+          await TikTokExtractor.saveExtracted(currentExtracted);
+          addLog('Extracted data stored under key "latest".', 'success');
+          showToast('Stored as latest', 'success');
+        } catch (err) {
+          addLog(`Error storing: ${err.message}`, 'error');
+          showToast('Error storing data', 'error');
+        }
+      });
+
+      loadBtn.addEventListener('click', async () => {
+        addLog('Loading extracted data from database...', 'info');
+        try {
+          const extracted = await TikTokExtractor.loadExtracted();
+          if (!extracted) {
+            addLog('No extracted data found in database.', 'warn');
+            return;
+          }
+          currentExtracted = extracted;
+          renderSummaryTable(extracted);
+          document.getElementById("username").innerText = extracted.users[0].username;
+          addLog('Extracted data loaded successfully.', 'success');
+          showToast('Data loaded', 'success');
+        } catch (err) {
+          addLog(`Error loading: ${err.message}`, 'error');
+          showToast('Error loading data', 'error');
+        }
+      });
+
+      clearBtn.addEventListener('click', async () => {
+        try {
+          await TikTokExtractor.clearExtracted();
+          addLog('Extracted data cleared from database (latest).', 'success');
+          showToast('Cleared latest', 'success');
+        } catch (err) {
+          addLog(`Error clearing: ${err.message}`, 'error');
+          showToast('Error clearing data', 'error');
+        }
+      });
+
+      downloadBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!currentExtracted) {
+          addLog('No extracted data to download. Run extraction first.', 'warn');
+          return;
+        }
+        let filename = 'extracted_data.json';
+        if (currentExtracted.users && currentExtracted.users.length > 0 && currentExtracted.users[0].username) {
+          filename = `${currentExtracted.users[0].username}_extracted.json`;
+        }
+        const jsonStr = JSON.stringify(currentExtracted, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLog(`Downloaded as ${filename}`, 'success');
+      });
+
+      // Theme toggle
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+          const body = document.body;
+          if (body.classList.contains('light-theme')) {
+            body.classList.replace('light-theme', 'dark-theme');
+            themeToggle.innerHTML = '<i class="fa-regular fa-moon"></i>';
+          } else {
+            body.classList.replace('dark-theme', 'light-theme');
+            themeToggle.innerHTML = '<i class="fa-regular fa-sun"></i>';
+          }
+        });
+      }
+
+      // Tab switching
+      const tabButtons = document.querySelectorAll('.custom-tab-btn');
+      const panes = document.querySelectorAll('.custom-tab-pane');
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabButtons.forEach(b => b.classList.remove('active'));
+          panes.forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
